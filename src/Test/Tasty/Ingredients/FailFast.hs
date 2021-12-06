@@ -8,20 +8,20 @@ module Test.Tasty.Ingredients.FailFast
 
 
 -------------------------------------------------------------------------------
-import           Control.Applicative
-import           Control.Concurrent
-import           Control.Concurrent.STM
-import qualified Data.IntMap.Strict     as IM
-import           Data.Monoid
-import           Data.Proxy
-import           Data.Typeable
-import           Test.Tasty.Ingredients
-import           Test.Tasty.Options
-import           Test.Tasty.Runners
+import Control.Applicative
+import Control.Concurrent
+import Control.Concurrent.STM
+import Data.Monoid
+import Data.Proxy
+import Data.Typeable
+import Test.Tasty.Ingredients
+import Test.Tasty.Options
+import Test.Tasty.Runners
+import qualified Data.IntMap.Strict as IM
 
-#if MIN_VERSION_tasty(1,3,1)
-import           Test.Tasty.Providers.ConsoleFormat
-#endif
+
+import Test.Tasty.Providers.ConsoleFormat
+
 
 -------------------------------------------------------------------------------
 import           Prelude
@@ -43,7 +43,7 @@ failFast i = i -- not applicable
 -------------------------------------------------------------------------------
 ffHijack :: (StatusMap -> IO (Time -> IO Bool)) -> StatusMap -> IO (Time -> IO Bool)
 ffHijack f sm = do
-  _ <- forkIO (work sm)
+  _ <- forkIO $ work sm
   f sm
 
 -------------------------------------------------------------------------------
@@ -67,7 +67,7 @@ work sm = atomically $ do
 -------------------------------------------------------------------------------
 anyFailed :: StatusMap -> STM Bool
 anyFailed = anyM (fmap isFailed . readTVar) . IM.elems
-  where isFailed (Done (Result { resultOutcome = Failure _})) = True
+  where isFailed (Done Result { resultOutcome = Failure _}) = True
         isFailed _                                            = False
 
 
@@ -90,11 +90,8 @@ failOne = flip modifyTVar' go
         go x = x
         res = Result { resultOutcome = Failure TestFailed
                      , resultDescription = mempty
-#if MIN_VERSION_tasty(0,11,0)
-                     , resultShortDescription = mempty
-#endif
+                     , resultShortDescription = "SKIP"
                      , resultTime = 0
-#if MIN_VERSION_tasty(1,3,1)
                      , resultDetailsPrinter = noResultDetails
-#endif
+
                      }
